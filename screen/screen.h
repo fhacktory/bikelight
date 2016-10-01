@@ -22,6 +22,29 @@
  * Note: The above follows WiringPi's numbering convention, just google it or something.
  */
 
+//-- Define
+
+/**
+* Dimensionnal rules
+*/
+#define SCREEN_RAIL_PIXEL	16
+#define SCREEN_MIDDLE_OFF_PIXEL 8
+#define SCREEN_MIDDLE_OFF_PIXEL_RADIUS (SCREEN_MIDDLE_OFF_PIXEL / 2)
+#define SCREEN_WIDTH (2*SCREEN_RAIL_PIXEL + SCREEN_MIDDLE_OFF_PIXEL)
+#define SCREEN_HEIGHT (2*SCREEN_RAIL_PIXEL + SCREEN_MIDDLE_OFF_PIXEL)
+
+#define SCREEN_QUARTER_NORTH_EAST_ANGLE	0
+#define SCREEN_QUARTER_SOUTH_EAST_ANGLE	90
+#define SCREEN_QUARTER_SOUTH_WEST_ANGLE	180
+#define SCREEN_QUARTER_NORTH_WEST_ANGLE	270
+
+#define SCREEN_IS_IN_QUARTER_NORTH_EAST(angle) (angle > SCREEN_QUARTER_NORTH_EAST_ANGLE)
+#define SCREEN_IS_IN_QUARTER_SOUTH_EAST(angle) (angle > SCREEN_QUARTER_SOUTH_EAST_ANGLE)
+#define SCREEN_IS_IN_QUARTER_SOUTH_WEST(angle) (angle > SCREEN_QUARTER_SOUTH_WEST_ANGLE)
+#define SCREEN_IS_IN_QUARTER_NORTH_WEST(angle) (angle > SCREEN_QUARTER_NORTH_WEST_ANGLE)
+/**
+* Pinout
+*/
 #define SIN 0
 #define SCLK 4
 #define XLAT 2
@@ -29,6 +52,23 @@
 
 #define DELAY 0
 
+
+
+
+
+
+//-- Type
+
+ typedef struct{
+ 	uint8_t[][] aui8Bitmap,
+}s_BitMapScreen;
+
+
+
+typedef struct
+{
+
+}s_AnimatedBitMapScreen
 //-- Public functions
 
 void screen_init(void);
