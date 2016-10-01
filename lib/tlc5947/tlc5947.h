@@ -2,6 +2,9 @@
 #define TLC5947_DRIVER
 
 #define NUM_TLCS 1
+
+
+
 void setLed(int ledIndex, int value);
 void setAllLeds(int value);
 void clearLeds();
@@ -10,4 +13,7 @@ void pulsePin(int pin);
 void tlc5947init();
 void tlc5947cleanup();
 void updateLeds();
+
+//** Public variables
+extern int tlcleds[];
 #endif
