@@ -10,7 +10,7 @@ if(!file_exists($imageURL))
 	die("L'image n'existe pas");
 }
 
-$strImage = "sImage = { \\<br />";
+$strImage = "sImage = {.aui8Bitmap = {\\<br />";
 
 $im = imagecreatefromjpeg($imageURL);
 
@@ -54,7 +54,7 @@ for($y = 0; $y < MAX_WIDTH; $y++)
 	$strImage .= "}";
 	$suffix = ", \\<br />";
 }
-$strImage .= "  \\<br />};";
+$strImage .= "  \\<br />}};";
 echo $strImage;
 
 function getGray($r, $g, $b)
