@@ -3,7 +3,7 @@
 #include <string.h>
 #include <unistd.h>
 #include <wiringPi.h>
-#include "tlc5947.h"
+#include "../lib/tlc5947/tlc5947.h"
 
 /*
  * Basic Use:

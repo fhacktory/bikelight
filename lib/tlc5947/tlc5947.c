@@ -46,8 +46,9 @@ void setLed(int ledIndex, int value)
 //value >= 0 && value < 4096
 void setAllLeds(int value)
 {
+ int i=0;
 	if(value >= 0 && value < 4096)
-		for(int i = 0; i < NUM_TLCS * 24; i++)
+		for(i = 0; i < NUM_TLCS * 24; i++)
 			tlcleds[i] = value;
 }
 
@@ -93,7 +94,8 @@ void tlc5947cleanup()
 
 void updateLeds()
 {
-	for(int i = NUM_TLCS * 24 - 1; i >= 0; i--)
+int i=0;
+	for(i = NUM_TLCS * 24 - 1; i >= 0; i--)
 	{
 		digitalWrite(SIN, tlcleds[i] & 2048);
 		pulsePin(SCLK);
@@ -125,3 +127,4 @@ void updateLeds()
 	pulsePin(XLAT);
 	digitalWrite(BLANK, 0);
 }
+
