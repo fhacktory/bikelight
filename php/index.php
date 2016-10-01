@@ -14,25 +14,41 @@ $strImage = "sImage = {<br />";
 
 $im = imagecreatefromjpeg($imageURL);
 
-
 list($width, $height, $type, $attr) = getimagesize($imageURL);
-$xStart =($width >= MAX_WIDTH) ? 0 : floor((MAX_WIDTH - $width) / 2);
-$xEnd =($width >= MAX_WIDTH) ? MAX_WIDTH : $xStart + $width;
-$yStart =($height >= MAX_WIDTH) ? 0 : floor((MAX_WIDTH - $height) / 2);
-$yEnd =($height >= MAX_WIDTH) ? MAX_WIDTH : $yStart + $height;
+$xStart = $yStart = 0;
+$xEnd = $yEnd = MAX_WIDTH;
+
+if($width <= MAX_WIDTH)
+{
+	$xStart = (MAX_WIDTH - $width) / 2;
+	$xEnd = $xStart + $width;
+}
+if($height <= MAX_WIDTH)
+{
+	$yStart = (MAX_WIDTH - $height) / 2;
+	$yEnd = $yStart + $height;
+}
 //echo $xStart."_".$xEnd."_".$yStart."_".$yEnd."<br />";
 $suffix = "";
-for($y = $yStart; $y < $yEnd; $y++)
+
+for($y = 0; $y < MAX_WIDTH; $y++)
 {
 	$strImage .= $suffix;
 	$strImage .= "\t{";
-	for($x = $xStart; $x < $xEnd; $x++)
+	for($x = 0; $x < MAX_WIDTH; $x++)
 	{
-		$rgb = imagecolorat($im, $x - $xStart, $y - $yStart);
-		$r = ($rgb >> 16) & 0xFF;
-		$g = ($rgb >> 8) & 0xFF;
-		$b = $rgb & 0xFF;
-		$strImage .= getGray($r, $g, $b).",";
+		if(($x - $xStart) >= 0 && ($x - $xStart) < $width && ($y - $yStart) >= 0 && ($y - $yStart) < $height)
+		{
+			$rgb = imagecolorat($im, $x - $xStart, $y - $yStart);
+			$r = ($rgb >> 16) & 0xFF;
+			$g = ($rgb >> 8) & 0xFF;
+			$b = $rgb & 0xFF;
+			$strImage .= getGray($r, $g, $b).",";
+		}
+		else
+		{
+			$strImage .= "0,";
+		}
 	}	
 	$strImage = substr($strImage, 0, strlen($strImage) - 1);
 	$strImage .= "}";
@@ -52,6 +68,7 @@ function getGray($r, $g, $b)
 	$greyShade = floor($grey / 32);
 	return $greyShade;
 }
+
 
 
 
