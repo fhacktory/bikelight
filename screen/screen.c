@@ -67,7 +67,8 @@ void screen_generateRailSequence()
 		screen_getCoord(ui8IndexLed, dAngle, &dX, &dY);
 		//printf("%2.1f=>%2.1f ",dX, dY);
 		tlcleds[ui8IndexLed] = screen_getIntensity(screen_getWeightPixel(dX, dY));
-		printf("%i=>%i ",ui8IndexLed, tlcleds[ui8IndexLed]);
+		printf("[%2.1f,%2.1f] \t%i=>%i\t ", dX, dY, ui8IndexLed, tlcleds[ui8IndexLed]);
+		//printf("%i=>%i ",ui8IndexLed, tlcleds[ui8IndexLed]);
 	}
 	printf("\n");
 }
