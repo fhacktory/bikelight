@@ -3,6 +3,8 @@
 #ifndef SCREEN_INCLUDE_H
 #define SCREEN_INCLUDE_H
 
+#include <stdint.h>
+
 /*
  * Basic Use:
  * Call tlc5947init() before trying to control the chip.
@@ -28,7 +30,7 @@
 * Dimensionnal rules
 */
 #define SCREEN_RAIL_PIXEL	16
-#define SCREEN_MIDDLE_OFF_PIXEL 8
+#define SCREEN_MIDDLE_OFF_PIXEL 38
 #define SCREEN_MIDDLE_OFF_PIXEL_RADIUS (SCREEN_MIDDLE_OFF_PIXEL / 2)
 #define SCREEN_WIDTH (2*SCREEN_RAIL_PIXEL + SCREEN_MIDDLE_OFF_PIXEL)
 #define SCREEN_HEIGHT (2*SCREEN_RAIL_PIXEL + SCREEN_MIDDLE_OFF_PIXEL)
@@ -60,15 +62,9 @@
 //-- Type
 
  typedef struct{
- 	uint8_t[][] aui8Bitmap,
+ 	uint8_t aui8Bitmap[SCREEN_HEIGHT][SCREEN_WIDTH];
 }s_BitMapScreen;
 
-
-
-typedef struct
-{
-
-}s_AnimatedBitMapScreen
 //-- Public functions
 
 void screen_init(void);

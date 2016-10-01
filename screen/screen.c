@@ -1,27 +1,32 @@
 #include <stdio.h>
+#include <stdint.h>
 #include <stdlib.h>
 #include <string.h>
 #include <unistd.h>
 #include <wiringPi.h>
+#include <math.h>
 #include "../lib/tlc5947/tlc5947.h"
 #include "screen.h"
-
+#include "frame.h"
 
 /**
 * Look at table of led setup in 8-shades of gray
 */
-const int[] AUIN8LOOKATTABLELED = {0 , 3 , 11 , 35, 116, 380, 1248, 4095};
+const int AUIN8LOOKATTABLELED[] = {0 , 3 , 11 , 35, 116, 380, 1248, 4095};
 
 
 //-- Private prototype
-uint16_t screen_getIntensity(ui8ShadeGray);
-uint8_t screen_getWeightPixel(float fX, float fY);
-void screen_getCoord(uint8_t ui8idLed, uint16_t ui16Angle, float *pfX, float *pfY)
+void screen_initImage(void);
+uint16_t screen_getIntensity(uint8_t ui8ShadeGray);
+uint8_t screen_getWeightPixel(double dX, double dY);
+void screen_getCoord(uint8_t ui8idLed, double dAngle, double *pdX, double *pdY);
+void screen_generateRailSequence(void);
 //-- Private variables
 
-uint16_t ui16Angle = 0;
+double dAngle = 90.0;
 s_BitMapScreen *psCurrentFrame;
-uint16_t[SCREEN_RAIL_PIXEL] aui8Rail = [0, 0, 0, 0, 0, 0, 0, 0];
+uint16_t aui8Rail[] = {0, 0, 0, 0, 0, 0, 0, 0};
+
 void screen_init()
 {
 
@@ -29,6 +34,7 @@ void screen_init()
 	//Init Driver Gpio
 	tlc5947init();
 	tlc5947cleanup();
+	screen_initImage();
 }
 
 void screen_compute()
@@ -37,6 +43,10 @@ void screen_compute()
 	updateLeds();
 } 
 
+void screen_initImage()
+{
+	psCurrentFrame =  &sImage;
+}
 
 
 
@@ -51,27 +61,30 @@ uint16_t screen_getIntensity(uint8_t ui8ShadeGray)
 void screen_generateRailSequence()
 {
 	uint8_t ui8IndexLed = 0;
-	float fX, fY;
+	double dX, dY;
 	for(ui8IndexLed = 0; ui8IndexLed < SCREEN_RAIL_PIXEL; ui8IndexLed++)
 	{	
-		screen_getCoord(ui8IndexLed, ui16Angle, &fX, &fY);
-		tlcleds[ui8IndexLed] = screen_getIntensity(screen_getWeightPixel(fX, fY));
+		screen_getCoord(ui8IndexLed, dAngle, &dX, &dY);
+		//printf("%2.1f=>%2.1f ",dX, dY);
+		tlcleds[ui8IndexLed] = screen_getIntensity(screen_getWeightPixel(dX, dY));
+		printf("%i=>%i ",ui8IndexLed, tlcleds[ui8IndexLed]);
 	}
+	printf("\n");
 }
 
 
 
-void screen_getCoord(uint8_t ui8idLed, uint16_t ui16Angle, float *pfX, float *pfY)
+void screen_getCoord(uint8_t ui8idLed, double dAngle, double *pdX, double *pdY)
 {
 	/*
-	*    #4     |
+	*    #4     0
 	*           |
 	*  Cadran   | #1
 	*  270->360 | Cadran 0 -> 90
 	*           |
 	*           |
 	*           |
-	*  ====================
+	* 270================== 90
 	*   #3      |  #2
 	*    Cadran	| Cadran 90 -> 180
 	*  180->270 |
@@ -79,39 +92,40 @@ void screen_getCoord(uint8_t ui8idLed, uint16_t ui16Angle, float *pfX, float *pf
 	*           |
 	*           |
 	*           |
-	*/
-	float fX = SCREEN_WIDTH, fY = SCREEN_HEIGHT;
+			   180
+	*/		
+	double dX = SCREEN_WIDTH / 2, dY = SCREEN_HEIGHT / 2;
 	//Cadran 1
-	if(SCREEN_IS_IN_QUARTER_NORTH_WEST(ui16Angle))
+	if(SCREEN_IS_IN_QUARTER_NORTH_WEST(dAngle))
 	{
-		ui16Angle -= SCREEN_QUARTER_NORTH_WEST_ANGLE;
-		fX -= cos(ui16Angle)*(ui8idLed + SCREEN_MIDDLE_OFF_PIXEL_RADIUS);
-		fY -= sin(ui16Angle)*(ui8idLed + SCREEN_MIDDLE_OFF_PIXEL_RADIUS);	
+		dAngle -= SCREEN_QUARTER_NORTH_WEST_ANGLE;
+		dX -= cos(dAngle)*(ui8idLed + SCREEN_MIDDLE_OFF_PIXEL_RADIUS);
+		dY -= sin(dAngle)*(ui8idLed + SCREEN_MIDDLE_OFF_PIXEL_RADIUS);	
 	}
-	else if(SCREEN_IS_IN_QUARTER_SOUTH_WEST(ui16Angle))
+	else if(SCREEN_IS_IN_QUARTER_SOUTH_WEST(dAngle))
 	{
-		ui16Angle -= SCREEN_QUARTER_SOUTH_WEST_ANGLE;
-		fX -= sin(ui16Angle)*(ui8idLed + SCREEN_MIDDLE_OFF_PIXEL_RADIUS);
-		fY += cos(ui16Angle)*(ui8idLed + SCREEN_MIDDLE_OFF_PIXEL_RADIUS);	
+		dAngle -= SCREEN_QUARTER_SOUTH_WEST_ANGLE;
+		dX -= sin(dAngle)*(ui8idLed + SCREEN_MIDDLE_OFF_PIXEL_RADIUS);
+		dY += cos(dAngle)*(ui8idLed + SCREEN_MIDDLE_OFF_PIXEL_RADIUS);	
 	}
-	else if(SCREEN_IS_IN_QUARTER_SOUTH_EAST(ui16Angle))
+	else if(SCREEN_IS_IN_QUARTER_SOUTH_EAST(dAngle))
 	{
-		ui16Angle -= SCREEN_QUARTER_SOUTH_EAST_ANGLE;
-		fX += cos(ui16Angle)*(ui8idLed + SCREEN_MIDDLE_OFF_PIXEL_RADIUS);
-		fY += sin(ui16Angle)*(ui8idLed + SCREEN_MIDDLE_OFF_PIXEL_RADIUS);	
+		dAngle -= SCREEN_QUARTER_SOUTH_EAST_ANGLE;
+		dX += cos(dAngle)*(ui8idLed + SCREEN_MIDDLE_OFF_PIXEL_RADIUS);
+		dY += sin(dAngle)*(ui8idLed + SCREEN_MIDDLE_OFF_PIXEL_RADIUS);	
 	}
 	else
 	{
-		fX += sin(ui16Angle)*(ui8idLed + SCREEN_MIDDLE_OFF_PIXEL_RADIUS);
-		fY -= cos(ui16Angle)*(ui8idLed + SCREEN_MIDDLE_OFF_PIXEL_RADIUS);	
+		dX += sin(dAngle)*(ui8idLed + SCREEN_MIDDLE_OFF_PIXEL_RADIUS);
+		dY -= cos(dAngle)*(ui8idLed + SCREEN_MIDDLE_OFF_PIXEL_RADIUS);	
 	}
 
-	pfX = fX;
-	pfY = fY;
+	*pdX = dX;
+	*pdY = dY;
 }
 
 
-uint8_t screen_getWeightPixel(float fX, float fY)
+uint8_t screen_getWeightPixel(double dX, double dY)
 {
 	/*
 		A___________B
@@ -120,17 +134,42 @@ uint8_t screen_getWeightPixel(float fX, float fY)
 		D___________C
 
 	*/
-	float fXfloor = floor(fX);
-	float fYfloor = floor(fY);
-	float fXceil = fXfloor + 1;
-	float fYceil = fYfloor + 1;
-	float dA = sqrtf((fX-fXfloor)*(fX-fXfloor) +  (fY-fYfloor)* (fY-fYfloor));
-	float dB = sqrtf((fXceil - fX)*(fXceil - fX) +  (fY-fYfloor)* (fY-fYfloor));
-	float dC = sqrtf((fXceil - fX)*(fXceil - fX) +  (fYceil - fY)* (fYceil - fY));
-	float dD = sqrtf((fX-fXfloor)*(fX-fXfloor) +  (fYceil - fY)* (fYceil - fY));
+	double dXfloor = floor(dX);
+	double dYfloor = floor(dY);
+	double dXceil = dXfloor + 1;
+	double dYceil = dYfloor + 1;
+	double dA = sqrt((dX - dXfloor)*(dX - dXfloor) +  (dY-dYfloor)* (dY-dYfloor));
+	double dB = sqrt((dX - dXceil)*(dX - dXceil) +  (dY-dYfloor)* (dY-dYfloor));
+	double dC = sqrt((dX - dXceil)*(dX - dXceil) +  (dY-dYceil)* (dY-dYceil));
+	double dD = sqrt((dX - dXfloor)*(dX - dXfloor) +  (dY-dYceil)* (dY-dYceil));
 
-	float dSum = dA + dB + dC + dD;
-	uint8_t ui8XTopLeftCorner = (uint8_t) fXfloor;
-	uint8_t ui8YTopLeftCorner = (uint8_t) fYfloor;
-	return uint8_t (((float) dC*psCurrentFrame[ui8YTopLeftCorner][ui8XTopLeftCorner] + dD*psCurrentFrame[ui8YTopLeftCorner][ui8XTopLeftCorner + 1] + dA*psCurrentFrame[ui8YTopLeftCorner + 1][ui8XTopLeftCorner + 1] + dB*psCurrentFrame[ui8YTopLeftCorner + 1][ui8XTopLeftCorner])/dSum); 
+	double dSum = dA + dB + dC + dD;
+	uint8_t ui8XTopLeftCorner = (uint8_t) dXfloor;
+	uint8_t ui8YTopLeftCorner = (uint8_t) dYfloor;
+	uint8_t ui8Weight = 0;
+	if(dX <= dXfloor + 0.5)
+	{
+		if(dY <= (dYfloor + 0.5))
+		{
+			ui8Weight = psCurrentFrame->aui8Bitmap[ui8YTopLeftCorner][ui8XTopLeftCorner];
+		}
+		else
+		{
+			ui8Weight = psCurrentFrame->aui8Bitmap[ui8YTopLeftCorner + 1][ui8XTopLeftCorner];
+		}
+	}
+	else
+	{
+		if(dY <= (dYfloor + 0.5))
+		{
+			ui8Weight = psCurrentFrame->aui8Bitmap[ui8YTopLeftCorner][ui8XTopLeftCorner + 1];
+		}
+		else
+		{
+			ui8Weight = psCurrentFrame->aui8Bitmap[ui8YTopLeftCorner + 1][ui8XTopLeftCorner + 1];
+		}
+	}
+	return ui8Weight;
+
+	//return (uint8_t) (((double) dC*(psCurrentFrame->aui8Bitmap[ui8YTopLeftCorner][ui8XTopLeftCorner]) + dD*(psCurrentFrame->aui8Bitmap[ui8YTopLeftCorner][ui8XTopLeftCorner + 1]) + dA*(psCurrentFrame->aui8Bitmap[ui8YTopLeftCorner + 1][ui8XTopLeftCorner + 1]) + dB*(psCurrentFrame->aui8Bitmap[ui8YTopLeftCorner + 1][ui8XTopLeftCorner]))/dSum); 
 }
