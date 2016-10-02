@@ -15,15 +15,16 @@ static const float gyroScale = 131; //131 LSB/deg/s
 static const float Rad2Degr=57.295779506;//PI=180
 int angleX, angleY, angleZ;
 float angleX0, angleY0, angleZ0;
-//***********************************************************************************
+
 int conversionSigne(float valeur)
-{//le registre contient des donn  es sign  es (le LSB donne le signe)=>convertion sign  e
+{
+//le registre contient des donn  es sign  es (le LSB donne le signe)=>convertion sign  e
 if (valeur>=0x8000)
 return -((65535-valeur)+1);
 else
 return valeur;
 }
-//************************************************************************************
+
 float getAccX()
 {
 float temp;
@@ -31,36 +32,36 @@ float temp;
 temp=wiringPiI2CReadReg8(fd,0x3B)<<8|wiringPiI2CReadReg8(fd,0x3C);
 return conversionSigne(temp);
 }
-//***************************************************************************************
+
 float getAccY()
 {
 float temp;
 temp=wiringPiI2CReadReg8(fd,0x3D)<<8|wiringPiI2CReadReg8(fd,0x3E);
 return conversionSigne(temp);
 }
-//***************************************************************************************
+
 float getAccZ()
 {
 float temp;
 temp=wiringPiI2CReadReg8(fd,0x3F)<<8|wiringPiI2CReadReg8(fd,0x40);
 return conversionSigne(temp);
 }
-//************************************************************************************
+
 float getGyroX()
 {
 return wiringPiI2CReadReg8(fd,0x43)<<8|wiringPiI2CReadReg8(fd,0x44);
 }
-//************************************************************************************
+
 float getGyroY()
 {
 return wiringPiI2CReadReg8(fd,0x45)<<8|wiringPiI2CReadReg8(fd,0x46);
 }
-//************************************************************************************
+
 float getGyroZ()
 {
 return wiringPiI2CReadReg8(fd,0x47)<<8|wiringPiI2CReadReg8(fd,0x48);
 }
-//************************************************************************************
+
 void lireTous()
 {
 //lecture de tous les registres du capteur MPU6050
@@ -73,7 +74,7 @@ temp=wiringPiI2CReadReg8(fd,i);
 printf("%i\n",temp);
 }
 }
-//**************************************************************************************
+
 float getAngleX()
 {
 double temp;
@@ -97,7 +98,7 @@ temp=sqrt( pow(aX,2)
                + pow(aZ,2));
 return Rad2Degr * atan(aY/temp);
 }
-//**************************************************************************************
+
 float getAngleZ()
 { //cette fonction n'a pas vraiment d'int  r  t si le capteur est pos      plat
 //car il est impossible de trouver l'angle de rotation Z
@@ -112,7 +113,7 @@ temp=sqrt( pow(aX,2)
 //return Rad2Degr*atan(temp/aZ);
 return Rad2Degr*atan(aZ/temp);
 }
-//**************************************************************************************
+
 void getAngles()
 { //cette fonction utilise le calcul d'angles par l'acc  l  ration
 // puis int  gre les donn  es gyroscopiques par filtrage (filtre de Kalman) pour   viter les d  rives
@@ -146,7 +147,7 @@ angleX=(0.04*arx) +(0.96*grx);
 angleY=(0.04*ary) +(0.96*gry);
 angleZ=(0.04*arz) +(0.96*grz);
 }
-//*********************************************************************************
+
 void initAngles()
 {//d  termine les valeurs lorsque le capteur est au repos
 //qDebug("Ne pas bouger et laisser le capteur en position d'  quilibre");
@@ -166,6 +167,60 @@ angleX0=tx/100;
 angleY0=ty/100;
 angleZ0=tz/100;
 }
+
+//-----AJOUT CODE-----//
+#define MICROS() 0
+static int32_t gyro_offset[3];
+#define CALIB_SHIFT 7
+
+static void zero_gyro(void) {
+	int i;
+	int reading[6];
+
+	gyro_offset[0] = 0;
+	gyro_offset[1] = 0;
+	gyro_offset[2] = 0;
+
+for (i = 0; i < (1 << CALIB_SHIFT); i ++) {
+		reading[0]=getAccX();
+		reading[1]=getAccY();
+		reading[2]=getAccZ();
+		reading[3]=getGyroX();
+		reading[4]=getGyroY();
+		reading[5]=getGyroZ();
+		gyro_offset[0] += reading[3];
+		gyro_offset[1] += reading[4];
+		gyro_offset[2] += reading[5];
+		delay(1);
+	}
+}
+
+/* Update gyro values and timestamps, used for gyro integration */
+static int16_t gyro_reading;
+static int32_t gyro_reading_mult;
+static uint32_t now, timediff;
+#define MULT_BITS 4
+//static void gyro_update(void) opts;
+static void gyro_update(void) {
+	gyro_reading_mult= (int32_t) getGyroZ()<<MULT_BITS;
+	gyro_reading_mult -=
+		(gyro_offset[2] +
+		 (1 << (CALIB_SHIFT - MULT_BITS - 1))) >>
+		(CALIB_SHIFT - MULT_BITS);
+#ifndef REVERSE
+	gyro_reading_mult = -gyro_reading_mult;
+#endif
+	gyro_reading = (gyro_reading_mult + (1 << (MULT_BITS - 1))) >>
+		MULT_BITS;
+
+	static uint32_t prev = 0;
+	now = MICROS();  //Get systick
+	timediff = now - prev;
+	prev = now;
+}
+
+
+
 //---------------------------------------------------------------------------------------
 int main ()
 {
