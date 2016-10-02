@@ -25,6 +25,9 @@ void screen_getCoord(uint8_t ui8idLed, double dAngle, double *pdX, double *pdY);
 void screen_generateRailSequence(void);
 bool screen_checkFPS(void);
 void screen_getNextImage(void);
+void screen_writeText(const char *pstrText, uint16_t ui16TextLength, uint64_t ui64ScrollSpeed);
+void screen_drawChar();
+void screen_drawCharColumn(char c, uint8_t ui8Column);
 
 //-- Private variables
 
@@ -34,9 +37,12 @@ s_AnimatedBitMapScreen *psAnimatedBitMapScreen;
 uint16_t ui16CurrentFrame = 0;
 bool bFireStop = false;
 uint64_t ui64ListTimeFrameRefresh = 0;
-
 //Draw Char
 s_ObjectScreen sObjectScreen;
+
+
+const char stringHelloWorld[] = "Hello World"; 
+
 
 void screen_init()
 {
@@ -46,20 +52,36 @@ void screen_init()
 	tlc5947init();
 	tlc5947cleanup();
 	screen_initImage();
+	screen_writeText(stringHelloWorld, sizeof(stringHelloWorld)/sizeof(char), 10000000);
 }
 
 void screen_compute()
 {
 
-	if(screen_checkFPS())
+	switch(sObjectScreen.eTypeObject)
 	{
-		screen_getNextImage();
+		case eBitMapScreen:
+			screen_generateRailSequence();
+		break;
+		case eAnimatedBitMapScreen:
+			if(screen_checkFPS())
+			{
+				screen_getNextImage();
+			}
+			if(bFireStop)
+			{
+				return;
+			}
+			screen_generateRailSequence();
+		break;
+		case eAnimatedTextScreen:
+			screen_computeTextSliding();
+			screen_drawChar();
+		break;
+		default:
+			printf("Erreur");
+		break;
 	}
-	if(bFireStop)
-	{
-		return;
-	}
-	screen_generateRailSequence();
 	updateLeds();
 } 
 
@@ -67,6 +89,7 @@ void screen_initImage()
 {
 	psAnimatedBitMapScreen = &sAnimation;
 	psCurrentFrame =  &psAnimatedBitMapScreen->apsBitMapScreen[0];
+	sObjectScreen.eTypeObject = eAnimatedBitMapScreen;
 }
 
 
@@ -237,6 +260,7 @@ void screen_writeText(const char *pstrText, uint16_t ui16TextLength, uint64_t ui
 	sObjectScreen.u.sAnimatedTextScreen.ui64ScrollSpeed = ui64ScrollSpeed;
 	sObjectScreen.u.sAnimatedTextScreen.pstrText = pstrText;
 	sObjectScreen.eTypeObject = eAnimatedTextScreen;
+	printf("Write text \n");
 }
 
 void screen_drawChar()
@@ -245,7 +269,8 @@ void screen_drawChar()
 	uint16_t ui16CharIndex = (uint16_t)((uint32_t) ui32Xpos / FONT_WIDTH);
 	if(ui16CharIndex < sObjectScreen.u.sAnimatedTextScreen.ui16TextLength)
 	{
-		screen_drawCharColumn(sObjectScreen.u.sAnimatedTextScreen.pstrText[ui16CharIndex], ui32Xpos - (ui16CharIndex * FONT_WIDTH));
+		char c = sObjectScreen.u.sAnimatedTextScreen.pstrText[ui16CharIndex];
+		screen_drawCharColumn(c,(uint8_t)(ui32Xpos - ((uint32_t) ui16CharIndex * FONT_WIDTH)));
 	}
 	else
 	{
@@ -256,13 +281,15 @@ void screen_drawChar()
 void screen_drawCharColumn(char c, uint8_t ui8Column)
 {
 	uint8_t ui8X;
-	uint8_t ui8ColumnPixels = (font[c] >> (FONT_WIDTH - ui8Column - 1)) & 0xFF;
+	uint8_t ui8ColumnPixels = (font[c] >> ((FONT_WIDTH - ui8Column - 1)*8)) & 0xFF;
+	uint8_t *ptrByte = &font[c];
 	uint8_t ui8GreyShade = 0;
+	uint8_t ui8Mask = 1 << (ui8Column+1);
+	//printf("ui32Xpos = \t%i\t%02x\t%16x\n",ui8Column,ui8ColumnPixels,font[c]);
 	for(ui8X = 0; ui8X < FONT_HEIGHT; ui8X++)
 	{
-		ui8GreyShade = (ui8ColumnPixels & 0x80) ? 7 : 0;
+		ui8GreyShade = (*((uint8_t *) (ptrByte + ui8X)) & ui8Mask) ? 7 : 0;
 		tlcleds[ui8X + SCREEN_TEXT_TOP_OFFSET] = screen_getIntensity(ui8GreyShade);
-		ui8ColumnPixels <<= 1;
 	}
 }
 
