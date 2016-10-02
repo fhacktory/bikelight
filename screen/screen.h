@@ -45,6 +45,9 @@
 #define SCREEN_IS_IN_QUARTER_SOUTH_EAST(angle) (angle >= SCREEN_QUARTER_SOUTH_EAST_ANGLE)
 #define SCREEN_IS_IN_QUARTER_SOUTH_WEST(angle) (angle >= SCREEN_QUARTER_SOUTH_WEST_ANGLE)
 #define SCREEN_IS_IN_QUARTER_NORTH_WEST(angle) (angle >= SCREEN_QUARTER_NORTH_WEST_ANGLE)
+
+
+#define SCREEN_TEXT_TOP_OFFSET	3
 /**
 * Pinout
 */
@@ -74,6 +77,35 @@ typedef struct
 	s_BitMapScreen *apsBitMapScreen[];
 	/* data */
 }s_AnimatedBitMapScreen;
+
+
+typedef struct 
+{
+	uint32_t ui32OffsetPixel;
+	uint16_t ui16TextLength;	
+	uint64_t ui64ScrollSpeed;	/* Scroll Time in nanoseconds */
+	uint64_t ui64PrevScroll;
+	char *pstrText;
+}s_AnimatedTextScreen;
+
+
+typedef union{
+	s_BitMapScreen sBitMapScreen;
+	s_AnimatedBitMapScreen sAnimatedBitMapScreen;
+	s_AnimatedTextScreen sAnimatedTextScreen;
+}u_ObjectScreen;
+
+typedef enum{
+	eBitMapScreen = 0,
+	eAnimatedBitMapScreen,
+	eAnimatedTextScreen,
+}e_TypeObjectScreen;
+
+typedef struct
+{
+	e_TypeObjectScreen eTypeObject;
+	u_ObjectScreen u;
+}s_ObjectScreen;
 
 //-- Public functions
 

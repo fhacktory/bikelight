@@ -10,7 +10,7 @@
 #include "../clock/clock.h"
 #include "screen.h"
 #include "frame.h"
-
+#include "font.h"
 /**
 * Look at table of led setup in 8-shades of gray
 */
@@ -32,11 +32,11 @@ double dAngle = 0.0;
 s_BitMapScreen *psCurrentFrame;
 s_AnimatedBitMapScreen *psAnimatedBitMapScreen;
 uint16_t ui16CurrentFrame = 0;
-uint16_t aui8Rail[] = {0, 0, 0, 0, 0, 0, 0, 0};
 bool bFireStop = false;
 uint64_t ui64ListTimeFrameRefresh = 0;
 
-
+//Draw Char
+s_ObjectScreen sObjectScreen;
 
 void screen_init()
 {
@@ -50,6 +50,7 @@ void screen_init()
 
 void screen_compute()
 {
+
 	if(screen_checkFPS())
 	{
 		screen_getNextImage();
@@ -225,3 +226,52 @@ void screen_getNextImage()
 	printf("%lld : %i=>%i%i%i%i%i%i\n",psCurrentFrame, ui16CurrentFrame, psCurrentFrame->aui8Bitmap[0][0],psCurrentFrame->aui8Bitmap[1][0],psCurrentFrame->aui8Bitmap[2][0],psCurrentFrame->aui8Bitmap[3][0],psCurrentFrame->aui8Bitmap[4][0],psCurrentFrame->aui8Bitmap[5][0]);
 }
 
+/**
+* Text
+*/
+
+void screen_writeText(const char *pstrText, uint16_t ui16TextLength, uint64_t ui64ScrollSpeed)
+{
+	sObjectScreen.u.sAnimatedTextScreen.ui32OffsetPixel = 0;
+	sObjectScreen.u.sAnimatedTextScreen.ui16TextLength = ui16TextLength;
+	sObjectScreen.u.sAnimatedTextScreen.ui64ScrollSpeed = ui64ScrollSpeed;
+	sObjectScreen.u.sAnimatedTextScreen.pstrText = pstrText;
+	sObjectScreen.eTypeObject = eAnimatedTextScreen;
+}
+
+void screen_drawChar()
+{
+	uint32_t ui32Xpos = sObjectScreen.u.sAnimatedTextScreen.ui32OffsetPixel  + ((uint32_t) dAngle);
+	uint16_t ui16CharIndex = (uint16_t)((uint32_t) ui32Xpos / FONT_WIDTH);
+	if(ui16CharIndex < sObjectScreen.u.sAnimatedTextScreen.ui16TextLength)
+	{
+		screen_drawCharColumn(sObjectScreen.u.sAnimatedTextScreen.pstrText[ui16CharIndex], ui32Xpos - (ui16CharIndex * FONT_WIDTH));
+	}
+	else
+	{
+		screen_drawCharColumn(' ', 0);
+	}
+}
+
+void screen_drawCharColumn(char c, uint8_t ui8Column)
+{
+	uint8_t ui8X;
+	uint8_t ui8ColumnPixels = (font[c] >> (FONT_WIDTH - ui8Column - 1)) & 0xFF;
+	uint8_t ui8GreyShade = 0;
+	for(ui8X = 0; ui8X < FONT_HEIGHT; ui8X++)
+	{
+		ui8GreyShade = (ui8ColumnPixels & 0x80) ? 7 : 0;
+		tlcleds[ui8X + SCREEN_TEXT_TOP_OFFSET] = screen_getIntensity(ui8GreyShade);
+		ui8ColumnPixels <<= 1;
+	}
+}
+
+void screen_computeTextSliding()
+{
+	sObjectScreen.u.sAnimatedTextScreen.ui64PrevScroll += ui64DeltaClock;
+	if(sObjectScreen.u.sAnimatedTextScreen.ui64PrevScroll >= sObjectScreen.u.sAnimatedTextScreen.ui64ScrollSpeed)
+	{
+		sObjectScreen.u.sAnimatedTextScreen.ui64PrevScroll = 0;
+		sObjectScreen.u.sAnimatedTextScreen.ui32OffsetPixel++;
+	}
+}
