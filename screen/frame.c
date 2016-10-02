@@ -227,7 +227,7 @@ const s_BitMapScreen sImage3 = {.aui8Bitmap = {\
 
 const s_AnimatedBitMapScreen sAnimation = { 
 	.ui16FrameAmount = 3,					
-	.ui64NanosecondsPerFrame = 500000000,	
+	.ui64NanosecondsPerFrame = 100000000,	
 	.bIsLooping = true,						
 	.apsBitMapScreen = {&sImage,&sImage2,&sImage3}	
 };

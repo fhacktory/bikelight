@@ -71,7 +71,7 @@ typedef struct
 	uint16_t ui16FrameAmount;
 	uint64_t ui64NanosecondsPerFrame;
 	bool bIsLooping;
-	s_BitMapScreen **apsBitMapScreen;
+	s_BitMapScreen *apsBitMapScreen[];
 	/* data */
 }s_AnimatedBitMapScreen;
 

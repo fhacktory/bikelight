@@ -221,7 +221,7 @@ void screen_getNextImage()
 			return ;
 		}
 	}
-	psCurrentFrame = (&psAnimatedBitMapScreen->apsBitMapScreen[ui16CurrentFrame]);
-	printf("%lld : %i=>%i%i%i%i%i%i\n",&psCurrentFrame, ui16CurrentFrame, psCurrentFrame->aui8Bitmap[0][0],psCurrentFrame->aui8Bitmap[1][0],psCurrentFrame->aui8Bitmap[2][0],psCurrentFrame->aui8Bitmap[3][0],psCurrentFrame->aui8Bitmap[4][0],psCurrentFrame->aui8Bitmap[5][0]);
+	psCurrentFrame = (psAnimatedBitMapScreen->apsBitMapScreen[ui16CurrentFrame]);
+	printf("%lld : %i=>%i%i%i%i%i%i\n",psCurrentFrame, ui16CurrentFrame, psCurrentFrame->aui8Bitmap[0][0],psCurrentFrame->aui8Bitmap[1][0],psCurrentFrame->aui8Bitmap[2][0],psCurrentFrame->aui8Bitmap[3][0],psCurrentFrame->aui8Bitmap[4][0],psCurrentFrame->aui8Bitmap[5][0]);
 }
 
