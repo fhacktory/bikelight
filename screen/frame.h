@@ -6,3 +6,4 @@
 
 //-- Public variables
 extern const s_BitMapScreen sImage;
+extern const s_AnimatedBitMapScreen sAnimation;

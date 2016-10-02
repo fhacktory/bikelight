@@ -4,8 +4,10 @@
 #include <string.h>
 #include <unistd.h>
 #include <wiringPi.h>
+#include <stdbool.h>
 #include <math.h>
 #include "../lib/tlc5947/tlc5947.h"
+#include "../clock/clock.h"
 #include "screen.h"
 #include "frame.h"
 
@@ -21,11 +23,20 @@ uint16_t screen_getIntensity(uint8_t ui8ShadeGray);
 uint8_t screen_getWeightPixel(double dX, double dY);
 void screen_getCoord(uint8_t ui8idLed, double dAngle, double *pdX, double *pdY);
 void screen_generateRailSequence(void);
+bool screen_checkFPS(void);
+void screen_getNextImage(void);
+
 //-- Private variables
 
-double dAngle = 90.0;
+double dAngle = 0.0;
 s_BitMapScreen *psCurrentFrame;
+s_AnimatedBitMapScreen *psAnimatedBitMapScreen;
+uint16_t ui16CurrentFrame = 0;
 uint16_t aui8Rail[] = {0, 0, 0, 0, 0, 0, 0, 0};
+bool bFireStop = false;
+uint64_t ui64ListTimeFrameRefresh = 0;
+
+
 
 void screen_init()
 {
@@ -39,13 +50,22 @@ void screen_init()
 
 void screen_compute()
 {
+	if(screen_checkFPS())
+	{
+		screen_getNextImage();
+	}
+	if(bFireStop)
+	{
+		return;
+	}
 	screen_generateRailSequence();
 	updateLeds();
 } 
 
 void screen_initImage()
 {
-	psCurrentFrame =  &sImage;
+	psAnimatedBitMapScreen = &sAnimation;
+	psCurrentFrame =  &psAnimatedBitMapScreen->apsBitMapScreen[0];
 }
 
 
@@ -67,10 +87,10 @@ void screen_generateRailSequence()
 		screen_getCoord(ui8IndexLed, dAngle, &dX, &dY);
 		//printf("%2.1f=>%2.1f ",dX, dY);
 		tlcleds[ui8IndexLed] = screen_getIntensity(screen_getWeightPixel(dX, dY));
-		printf("[%2.1f,%2.1f] \t%i=>%i\t ", dX, dY, ui8IndexLed, tlcleds[ui8IndexLed]);
+		//printf("[%2.1f,%2.1f] \t%i=>%i\t ", dX, dY, ui8IndexLed, tlcleds[ui8IndexLed]);
 		//printf("%i=>%i ",ui8IndexLed, tlcleds[ui8IndexLed]);
 	}
-	printf("\n");
+	//printf("\n");
 }
 
 
@@ -174,3 +194,34 @@ uint8_t screen_getWeightPixel(double dX, double dY)
 
 	//return (uint8_t) (((double) dC*(psCurrentFrame->aui8Bitmap[ui8YTopLeftCorner][ui8XTopLeftCorner]) + dD*(psCurrentFrame->aui8Bitmap[ui8YTopLeftCorner][ui8XTopLeftCorner + 1]) + dA*(psCurrentFrame->aui8Bitmap[ui8YTopLeftCorner + 1][ui8XTopLeftCorner + 1]) + dB*(psCurrentFrame->aui8Bitmap[ui8YTopLeftCorner + 1][ui8XTopLeftCorner]))/dSum); 
 }
+
+bool screen_checkFPS()
+{
+	ui64ListTimeFrameRefresh += ui64DeltaClock;
+	if(ui64ListTimeFrameRefresh >= psAnimatedBitMapScreen->ui64NanosecondsPerFrame)
+	{
+		ui64ListTimeFrameRefresh = 0;
+		return true;
+	}
+	return false;
+}
+
+void screen_getNextImage()
+{
+	printf("Next Frame required [%i=>%i]\n",ui16CurrentFrame,ui16CurrentFrame+1);
+	if(++ui16CurrentFrame >= psAnimatedBitMapScreen->ui16FrameAmount)
+	{
+		if(psAnimatedBitMapScreen->bIsLooping == true)
+		{
+			ui16CurrentFrame = 0;
+		}
+		else
+		{
+			bFireStop = true;
+			return ;
+		}
+	}
+	psCurrentFrame = (&psAnimatedBitMapScreen->apsBitMapScreen[ui16CurrentFrame]);
+	printf("%lld : %i=>%i%i%i%i%i%i\n",&psCurrentFrame, ui16CurrentFrame, psCurrentFrame->aui8Bitmap[0][0],psCurrentFrame->aui8Bitmap[1][0],psCurrentFrame->aui8Bitmap[2][0],psCurrentFrame->aui8Bitmap[3][0],psCurrentFrame->aui8Bitmap[4][0],psCurrentFrame->aui8Bitmap[5][0]);
+}
+

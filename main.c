@@ -8,7 +8,7 @@
 #include <unistd.h>
 #include "screen/screen.h"
 #include "mpu/mpu.h"
-
+#include "clock/clock.h"
 //-- Private functions
 void main_init(void);
 void main_compute(void);
@@ -34,13 +34,16 @@ int main (int argc, char *argv[]){
 
 void main_init()
 {
+	printf("App. Initialized...");
 	mpu_init();
 	screen_init();
+	printf("OK\n");
 }
 
 
 void main_compute()
 {
+	clock_refreshTimer();
 	mpu_compute();
 	screen_compute();
 }

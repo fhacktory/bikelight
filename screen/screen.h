@@ -4,6 +4,7 @@
 #define SCREEN_INCLUDE_H
 
 #include <stdint.h>
+#include <stdbool.h>
 
 /*
  * Basic Use:
@@ -64,6 +65,15 @@
  typedef struct{
  	uint8_t aui8Bitmap[SCREEN_HEIGHT][SCREEN_WIDTH];
 }s_BitMapScreen;
+
+typedef struct 
+{
+	uint16_t ui16FrameAmount;
+	uint64_t ui64NanosecondsPerFrame;
+	bool bIsLooping;
+	s_BitMapScreen **apsBitMapScreen;
+	/* data */
+}s_AnimatedBitMapScreen;
 
 //-- Public functions
 
